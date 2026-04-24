@@ -68,6 +68,8 @@ type Options struct {
 	Version       bool
 
 	// Timing
+	// Increased default read timeout from the upstream default to give slower
+	// pipes (e.g. find on network mounts) more time before fzf gives up.
 	ReadTimeout   time.Duration
 }
 
@@ -85,6 +87,10 @@ type Fzf struct {
 
 // New creates a new Fzf instance with the given options
 func New(opts *Options) *Fzf {
+	// Default read timeout to 2 seconds if not explicitly set
+	if opts.ReadTimeout == 0 {
+		opts.ReadTimeout = 2 * time.Second
+	}
 	return &Fzf{
 		opts:  opts,
 		event: make(chan int),
