@@ -57,4 +57,8 @@ const usage = `usage: fzf [options]
                           layout since it feels more natural (prompt at top).
                           Set FZF_DEFAULT_OPTS='--layout=reverse' in your shell
                           profile to make this the default.
-    --border[=STYLE]      Draw border around the f
+    --border[=STYLE]      Draw border around the fzf window: [rounded|sharp|bold|
+                          block|thinblock|double|horizontal|vertical|
+                          top|bottom|left|right|none] (default: rounded)
+                          Note: 'sharp' is my preferred style for terminals
+                          that don't render rounded corners well (e.g. tmux).
