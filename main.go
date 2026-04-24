@@ -38,7 +38,7 @@ const usage = `usage: fzf [options]
     --cycle               Enable cyclic scroll
     --keep-right          Keep the right end of the line visible on overflow
     --scroll-off=LINES    Number of lines to keep above or below when
-                          scrolling to the top or bottom (default: 0)
+                          scrolling to the top or bottom (default: 3)
     --no-hscroll          Disable horizontal scroll
     --hscroll-off=COLS    Number of columns to keep to the right of the
                           highlighted substring (default: 10)
@@ -57,9 +57,4 @@ const usage = `usage: fzf [options]
                           layout since it feels more natural (prompt at top).
                           Set FZF_DEFAULT_OPTS='--layout=reverse' in your shell
                           profile to make this the default.
-    --border[=STYLE]      Draw border around the finder
-                          [rounded|sharp|bold|block|thinblock|double|horizontal|vertical|
-                           top|bottom|left|right|none] (default: rounded)
-    --border-label=LABEL  Label to print on the border
-    --border-label-pos=COL Position of the border label
-              
+    --border[=STYLE]      Draw border around the f
