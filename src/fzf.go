@@ -87,9 +87,11 @@ type Fzf struct {
 
 // New creates a new Fzf instance with the given options
 func New(opts *Options) *Fzf {
-	// Default read timeout to 2 seconds if not explicitly set
+	// Default read timeout to 5 seconds if not explicitly set.
+	// Upstream uses 2s, but I frequently use fzf with slow network mounts
+	// and find processes that take a moment to start producing output.
 	if opts.ReadTimeout == 0 {
-		opts.ReadTimeout = 2 * time.Second
+		opts.ReadTimeout = 5 * time.Second
 	}
 	return &Fzf{
 		opts:  opts,
@@ -139,7 +141,4 @@ func (f *Fzf) runFilter() ExitCode {
 }
 
 // runInteractive runs fzf in interactive terminal mode
-func (f *Fzf) runInteractive() ExitCode {
-	// TODO: implement interactive terminal mode
-	return ExitOk
-}
+func (f *Fzf) runI
