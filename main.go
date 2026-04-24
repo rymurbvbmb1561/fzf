@@ -1,104 +1,141 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 
-	fzf "github.com/junegunn/fzf/src"
-	"github.com/junegunn/fzf/src/protector"
+	"github.com/junegunn/fzf/src"
 )
 
-var version = "0.71"
-var revision = "devel"
+const usage = `usage: fzf [options]
 
-//go:embed shell/key-bindings.bash
-var bashKeyBindings []byte
+  Search
+    -x, --extended        Extended-search mode
+                          (enabled by default; +x or --no-extended to disable)
+    -e, --exact           Enable Exact-match
+    -i                    Case-insensitive match (default: smart-case match)
+    +i                    Case-sensitive match
+    --scheme=SCHEME       Scoring scheme [default|path|history]
+    --literal             Do not normalize latin script letters before matching
+    -n, --nth=N[,..]      Comma-separated list of field index expressions
+                          for limiting search scope. Each can be a non-zero
+                          integer or a range expression ([BEGIN]..[END]).
+    --with-nth=N[,..]     Transform the presentation of each line using
+                          field index expressions
+    -d, --delimiter=STR   Field delimiter regex (default: AWK-style)
+    +s, --no-sort         Do not sort the result
+    --track               Track the current selection when the result is updated
+    --tac                 Reverse the order of the input
+    --disabled            Do not perform search
+    --tiebreak=CRI[,..]   Comma-separated list of sort criteria to apply
+                          when the scores are tied [length|chunk|begin|end|index]
+                          (default: length)
 
-//go:embed shell/completion.bash
-var bashCompletion []byte
+  Interface
+    -m, --multi[=MAX]     Enable multi-select with tab/shift-tab
+    --no-mouse            Disable mouse
+    --bind=KEYBINDS       Custom key bindings. Refer to the man page.
+    --cycle               Enable cyclic scroll
+    --keep-right          Keep the right end of the line visible on overflow
+    --scroll-off=LINES    Number of lines to keep above or below when
+                          scrolling to the top or bottom (default: 0)
+    --no-hscroll          Disable horizontal scroll
+    --hscroll-off=COLS    Number of columns to keep to the right of the
+                          highlighted substring (default: 10)
+    --filepath-word       Make word-wise movements respect path separators
+    --jump-labels=CHARS   Label characters for jump and jump-accept
 
-//go:embed shell/key-bindings.zsh
-var zshKeyBindings []byte
+  Layout
+    --height=[~]HEIGHT[%] Display fzf window below the cursor with the given
+                          height instead of using fullscreen.
+                          If prefixed with '~', fzf will determine the height
+                          according to the input size.
+    --min-height=HEIGHT   Minimum height when --height is given in percent
+                          (default: 10)
+    --layout=LAYOUT       Choose layout: [default|reverse|reverse-list]
+    --border[=STYLE]      Draw border around the finder
+                          [rounded|sharp|bold|block|thinblock|double|horizontal|vertical|
+                           top|bottom|left|right|none] (default: rounded)
+    --border-label=LABEL  Label to print on the border
+    --border-label-pos=COL Position of the border label
+                          [POSITIVE_INTEGER: columns from left|
+                           NEGATIVE_INTEGER: columns from right][:bottom]
+                          (default: 0 or center)
+    --margin=MARGIN       Comma-separated list of margin around the finder
+                          [TRBL | TB,RL | T,RL,B | T,R,B,L]
+    --padding=PADDING     Comma-separated list of padding inside the finder
+                          [TRBL | TB,RL | T,RL,B | T,R,B,L]
+    --info=STYLE          Finder info style
+                          [default|right|hidden|inline[:SEPARATOR]|inline-right]
+    --separator=STR       String to form horizontal separator on info line
+    --no-separator        Hide info line separator
+    --scrollbar[=C1[C2]]  Scrollbar character(s) (each up to 2 columns wide)
+    --no-scrollbar        Hide scrollbar
+    --prompt=STR          Input prompt (default: '> ')
+    --pointer=STR         Pointer to the current line (default: '>')
+    --marker=STR          Multi-select marker (default: '>')
+    --header=STR          String to print as header
+    --header-lines=N      The first N lines of the input are treated as header
+    --header-first        Print header before the prompt line
+    --ellipsis=STR        Ellipsis to show when line is truncated (default: '..')
 
-//go:embed shell/completion.zsh
-var zshCompletion []byte
+  Display
+    --ansi                Enable processing of ANSI color codes
+    --tabstop=SPACES      Number of spaces for a tab character (default: 8)
+    --color=COLSPEC       Base scheme (dark|light|16|bw) and/or custom colors
+    --no-bold             Do not use bold text
 
-//go:embed shell/key-bindings.fish
-var fishKeyBindings []byte
+  History
+    --history=FILE        History file
+    --history-size=N      Maximum number of history entries (default: 1000)
 
-//go:embed shell/completion.fish
-var fishCompletion []byte
+  Preview
+    --preview=COMMAND     Command to preview highlighted line ({})
+    --preview-window=OPT  Preview window layout (default: right:50%)
+                          [up|down|left|right][,SIZE[%]]
+                          [,[no]wrap][,[no]cycle][,[no]follow][,[no]hidden]
+                          [,border-BORDER_OPT]
+                          [,+SCROLL[OFFSETS][/DENOM]][,~HEADER_LINES]
+                          [,default][,<SIZE_THRESHOLD(ALTERNATIVE_LAYOUT)]
+    --preview-label=LABEL
+    --preview-label-pos=N Same as --border-label and --border-label-pos,
+                          but for preview window
 
-//go:embed man/man1/fzf.1
-var manPage []byte
+  Scripting
+    -q, --query=STR       Start the finder with the given query
+    -1, --select-1        Automatically select the only match
+    -0, --exit-0          Exit immediately when there's no match
+    -f, --filter=STR      Filter mode. Do not start interactive finder.
+    --print-query         Print query as the first line
+    --expect=KEYS         Comma-separated list of keys to complete fzf
+    --read0               Read input delimited by ASCII NUL characters
+    --print0              Print output delimited by ASCII NUL characters
+    --sync                Synchronous search for multi-staged filtering
+    --listen[=[ADDR:]PORT] Start HTTP server to receive actions (POST /)
+                          (To allow remote process execution, use --listen-unsafe)
+    --version             Display version information and exit
 
-func printScript(label string, content []byte) {
-	fmt.Println("### " + label + " ###")
-	fmt.Println(strings.TrimSpace(string(content)))
-	fmt.Println("### end: " + label + " ###")
-}
-
-func exit(code int, err error) {
-	if code == fzf.ExitError && err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-	os.Exit(code)
-}
+  Environment variables
+    FZF_DEFAULT_COMMAND   Default command to use when input is tty
+    FZF_DEFAULT_OPTS      Default options
+    FZF_DEFAULT_OPTS_FILE Default options file
+`
 
 func main() {
-	protector.Protect()
-
-	options, err := fzf.ParseOptions(true, os.Args[1:])
-	if err != nil {
-		exit(fzf.ExitError, err)
-		return
-	}
-	if options.Bash {
-		printScript("key-bindings.bash", bashKeyBindings)
-		printScript("completion.bash", bashCompletion)
-		return
-	}
-	if options.Zsh {
-		printScript("key-bindings.zsh", zshKeyBindings)
-		printScript("completion.zsh", zshCompletion)
-		return
-	}
-	if options.Fish {
-		printScript("key-bindings.fish", fishKeyBindings)
-		printScript("completion.fish", fishCompletion)
-		return
-	}
-	if options.Help {
-		fmt.Print(fzf.Usage)
-		return
-	}
-	if options.Version {
-		if len(revision) > 0 {
-			fmt.Printf("%s (%s)\n", version, revision)
-		} else {
-			fmt.Println(version)
+	// Check for version or help flags before initializing the full app
+	for _, arg := range os.Args[1:] {
+		if arg == "--version" || arg == "-v" {
+			fmt.Println(fzf.Version)
+			os.Exit(0)
 		}
-		return
-	}
-	if options.Man {
-		file := fzf.WriteTemporaryFile([]string{string(manPage)}, "\n")
-		if len(file) == 0 {
-			fmt.Print(string(manPage))
-			return
+		if arg == "--help" || arg == "-h" {
+			fmt.Print(usage)
+			os.Exit(0)
 		}
-		defer os.Remove(file)
-		cmd := exec.Command("man", file)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		if err := cmd.Run(); err != nil {
-			fmt.Print(string(manPage))
-		}
-		return
 	}
 
-	code, err := fzf.Run(options)
-	exit(code, err)
+	if err := fzf.Run(fzf.ParseOptions()); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(2)
+	}
 }
