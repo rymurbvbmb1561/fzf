@@ -60,5 +60,4 @@ const usage = `usage: fzf [options]
     --border[=STYLE]      Draw border around the fzf window: [rounded|sharp|bold|
                           block|thinblock|double|horizontal|vertical|
                           top|bottom|left|right|none] (default: rounded)
-                          Note: 'sharp' is my preferred style for terminals
-                          that don't render rounded corners well (e.g. tmux).
+                          Note: 'sharp' looks cleaner in most terminal fonts.
