@@ -30,7 +30,9 @@ func NewReader(ch chan<- []byte, eventBox *EventBox, delimNil bool) *Reader {
 
 // ReadSource reads from the given io.Reader, splitting on newline or null byte.
 func (r *Reader) ReadSource(reader io.Reader, limit int64) bool {
-	br := bufio.NewReaderSize(reader, 64*1024)
+	// Use a larger buffer size (256KB instead of 64KB) for better throughput
+	// when reading large inputs (e.g. find / or big log files).
+	br := bufio.NewReaderSize(reader, 256*1024)
 	delim := byte('\n')
 	if r.delimNil {
 		delim = 0
