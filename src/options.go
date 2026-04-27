@@ -106,15 +106,15 @@ func defaultOptions() *Options {
 		Extended:  true,
 		Case:      CaseSmart,
 		Normalize: true,
-		Layout:    LayoutDefault,
-		Prompt:    "> ",
-		Pointer:   ">",
-		Marker:    ">",
+		Layout:    LayoutReverse, // personal preference: reverse layout feels more natural
+		Prompt:    "❯ ",         // nicer prompt character
+		Pointer:   "▶",          // arrow pointer instead of >
+		Marker:    "✓",          // checkmark for selected items
 		Multi:     0,
 		Sort:      1000,
 		Keybinds:  make(map[string]string),
 		Expect:    make(map[string]string),
-		Height:    heightSpec{size: 0, percent: false},
+		Height:    heightSpec{size: 50, percent: true}, // default to 50% height
 		Preview:   previewOpts{position: "right", size: 50, percent: true},
 	}
 }
