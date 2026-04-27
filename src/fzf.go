@@ -87,12 +87,13 @@ type Fzf struct {
 
 // New creates a new Fzf instance with the given options
 func New(opts *Options) *Fzf {
-	// Default read timeout to 10 seconds if not explicitly set.
-	// Upstream uses 2s; I've bumped this further because I regularly run fzf
-	// over slow NFS/SMB mounts and SSH-mounted filesystems where find can take
-	// several seconds just to start emitting results.
+	// Default read timeout to 15 seconds if not explicitly set.
+	// Upstream uses 2s; bumped to 15s because I regularly run fzf over slow
+	// NFS/SMB mounts and SSH-mounted filesystems where find can take several
+	// seconds just to start emitting results. 15s gives a comfortable buffer
+	// without waiting forever on a truly broken pipe.
 	if opts.ReadTimeout == 0 {
-		opts.ReadTimeout = 10 * time.Second
+		opts.ReadTimeout = 15 * time.Second
 	}
 	return &Fzf{
 		opts:  opts,
@@ -135,5 +136,4 @@ func (f *Fzf) Run() ExitCode {
 	return f.runInteractive()
 }
 
-// runFilter runs fzf in non-interactive filter mode
-func (f *Fzf) runFi
+// runF
